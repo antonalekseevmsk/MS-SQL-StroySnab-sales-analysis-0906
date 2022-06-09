@@ -1,0 +1,397 @@
+--
+
+select top 10 * from invoice_order_operations
+
+--
+
+exec sp_columns invoice_order_operations
+
+--
+
+select count (*) [q-ty of rows in the table is] from invoice_order_operations
+
+--
+
+select count(*) [q-ty of rows in the table is] from invoice_order_operations
+
+--
+
+select distinct order_type from invoice_order_operations
+select distinct product_category from invoice_order_operations
+select distinct productfrom invoice_order_operations
+select distinct manufacturer from invoice_order_operations
+
+--
+
+select
+  min(dt) [the earliest date is],
+  max(dt) [the latest date is]
+from invoice_order_operations
+
+select
+  min(cnt) min_cnt,
+  max(cnt) max_cnt
+from invoice_order_operations
+
+select
+  min(price) min_price,
+  max(price) max_price
+from invoice_order_operations
+
+select
+  min(selling_price) min_selling_price,
+  max(selling_price) max_selling_price
+from invoice_order_operations
+
+--
+
+select
+  product_category,
+  count (*) rows_qty
+  from invoice_order_operations
+group by product_category
+
+update
+  invoice_order_operations
+  set product_category='Insulation materials'
+  where product_category='insulation Material'
+
+select
+  manufacturer,
+  count (*) rows_qty
+from invoice_order_operations
+group by manufacturer
+
+update
+  invoice_order_operations
+  set manufacturer='Tikkurila'
+  where manufacturer='Tikurila'
+
+--
+
+select cnt_rank, count(*) rows_qty from
+(select round(cnt/1000,0) cnt_rank from invoice_order_operations) a
+group by cnt_rank
+
+delete from invoice_order_operations where cnt=999999999
+
+select
+  min(price) min_price,
+  max(price) max_price
+from invoice_order_operations
+
+delete from invoice_order_operations where price<0
+
+--
+
+select count(*) [q-ty of rows in the table is] from invoice_order_operations
+
+--
+
+select
+  format(dt,'yyyy-MM') период,
+  count (order_type) [кол-во накладных],
+  round(sum(cnt*price),0) [сумма закупки]
+  from invoice_order_operations
+where order_type='purchase order'
+group by format(dt,'yyyy-MM')
+
+--
+
+select
+  round(sum(cnt*price),0) расход,
+  round(sum(cnt*selling_price),0) доход,
+  round(sum(cnt*selling_price)-sum(cnt*price),0) прибыль
+from invoice_order_operations
+where order_type='sales invoice'
+
+--
+
+select
+  format(dt,'yyyy-MM') период,
+  sum(cnt) [кол-во проданных товаров],
+  round(sum(cnt*selling_price),0) выручка,
+  round(sum(cnt*selling_price)-sum(cnt*price),0) прибыль
+from invoice_order_operations
+where order_type='sales invoice'
+group by format(dt,'yyyy-MM')
+
+--
+
+select
+  format(dt,'yyyy-MM') период,
+  'закупка' = 
+    sum(case
+      when order_type='purchase order' then round(cnt*price,0)
+    end),
+  'продажа' =
+    sum(case
+      when order_type='sales invoice' then round(cnt*selling_price,0)
+    end)
+from invoice_order_operations
+group by format(dt,'yyyy-MM')
+order by format(dt,'yyyy-MM')
+
+--
+
+select
+  product_category [категория товара],
+  round(sum(cnt),0) количество,
+  round(sum(cnt*selling_price),0) выручка,
+  round(sum(cnt*selling_price)-sum(cnt*price),0) прибыль
+from invoice_order_operations
+where order_type='sales invoice'
+group by product_category
+
+--
+
+create table order_type
+(
+  order_type_id int identity(1,1) not null,
+    constraint ak_order_type_id unique(order_type_id),
+    constraint pk_order_type_id primary key clustered(order_type_id),
+  order_type varchar (250)
+)
+
+create table product_category
+(
+  product_category_id int identity(1,1) not null,
+    constraint ak_product_category_id unique(product_category_id),
+    constraint pk_product_category_id primary key clustered(product_category_id),
+  product_category varchar (250)
+)
+
+create table product
+(
+  product_id int identity(1,1) not null,
+    constraint ak_product_id unique(product_id),
+    constraint pk_product_id primary key clustered(product_id),
+  product varchar (250)
+)
+
+create table manufacturer
+(
+  manufacturer_id int identity(1,1) not null,
+    constraint ak_manufacturer_id unique(manufacturer_id),
+    constraint pk_manufacturer_id primary key clustered(manufacturer_id),
+  manufacturer varchar (250)
+)
+
+--
+
+insert order_type
+  select distinct order_type from invoice_order_operations order by order_type
+
+select * from order_type
+
+insert product_category
+  values
+    ('Construction chemistry'),
+    ('Dry building mixes'),
+    ('Insulation materials'),
+    ('Two-component mortar'),
+    ('Varnishes and paints')
+
+select * from product_category
+
+insert product
+  select distinct product from invoice_order_operations order by product
+    
+
+select * from product
+
+insert manufacturer
+  select distinct manufacturer from invoice_order_operations order by manufacturer
+
+select * from manufacturer
+
+--
+
+create table operations_data
+( 
+  dt date,
+  tm time,
+  order_number int,
+  order_type_id int,
+  product_category_id int,
+  product_id int,
+  manufacturer_id int,
+  cnt int,
+  price float,
+  selling_price float
+)
+
+select * from operations_data
+
+--
+
+select top 10
+  dt,
+  tm,
+  order_number,
+  ot.order_type_id,
+  pc.product_category_id,
+  p.product_id,
+  m.manufacturer_id,
+  cnt,
+  price,
+  selling_price
+from invoice_order_operations a
+  left join order_type ot on a.order_type=ot.order_type
+  left join product_category pc on a.product_category=pc.product_category
+  left join product p on a.product=p.product
+  left join manufacturer m on a.manufacturer=m.manufacturer
+
+--
+
+insert operations_data
+  select
+    dt,
+    tm,
+    order_number,
+    ot.order_type_id,
+    pc.product_category_id,
+    p.product_id,
+    m.manufacturer_id,
+    cnt,
+    price,
+    selling_price
+  from invoice_order_operations a
+    left join order_type ot on a.order_type=ot.order_type
+    left join product_category pc on a.product_category=pc.product_category
+    left join product p on a.product=p.product
+    left join manufacturer m on a.manufacturer=m.manufacturer
+
+--
+
+select top 10 * from operations_data
+
+--
+
+select
+  product,
+  (select sum(t2.cnt)
+    from operations_data t2
+      where t2.order_type_id='1' and t2.product_id=t1.product_id) куплено,
+  (select sum(t2.cnt)
+    from operations_data t2
+      where t2.order_type_id='2' and t2.product_id=t1.product_id) продано,
+  (select sum(t2.cnt)
+    from operations_data t2
+      where t2.order_type_id='1' and t2.product_id=t1.product_id)-
+      (select sum(t2.cnt)
+        from operations_data t2
+          where t2.order_type_id='2' and t2.product_id=t1.product_id) остаток
+from product t1
+
+--
+
+select top 10 * from invoice_order_raw
+
+--
+
+create table invoice_order_operations_new
+( 
+  dt date,
+  tm time,
+  order_number int,
+  order_type varchar (250),
+  product_category varchar (250),
+  product varchar (250),
+  manufacturer varchar (250),
+  cnt int,
+  price float,
+  selling_price float
+)
+
+select * from invoice_order_operations_new
+
+--
+
+insert invoice_order_operations_new
+  select
+    substring(row,1,10) date,
+    substring(row,14,8) time,
+    substring(row,25,1) order_number,
+    rtrim(substring(row,31,14)) order_type,
+    rtrim(substring(row,48,22)) product_category,
+    rtrim(substring(row,73,35)) product,
+    rtrim(substring(row,111,9)) manufacturer,
+    rtrim(substring(row,123,6)) cnt,
+    rtrim(substring(row,130,7)) price,
+    replace(rtrim(substring(row,138,7)),'null',0) selling_price
+  from invoice_order_raw
+  
+select * from invoice_order_operations_new 
+
+--
+
+select
+  min(dt) dt_min,
+  max(dt) dt_max,
+  min(order_number) order_number_min,
+  max(order_number) order_number_max,
+  min(cnt) cnt_min,
+  max(cnt) cnt_max,
+  min(price) price_min,
+  max(price) price_min,
+  min(selling_price) selling_price_min,
+  max(selling_price) selling_price_max
+from invoice_order_operations_new
+
+select distinct order_type from invoice_order_operations_new
+
+select distinct product_category from invoice_order_operations_new
+
+select distinct product from invoice_order_operations_new
+
+select distinct manufacturer from invoice_order_operations_new
+
+--
+
+insert product_category
+  values
+  (6,'Pipes')
+
+select * from product_category
+
+insert manufacturer
+  values
+  (6,'Rehau')
+
+select * from manufacturer
+
+insert product
+  values
+  (23,'1 in. RAUPEX Blue UV Shield Pipe'),
+  (24,'1 in. RAUPEX Red UV Shield Pipe'),
+  (25,'1/2 in. RAUPEX Blue UV Shield Pipe'),
+  (26,'3/4 in. RAUPEX Red UV Shield Pipe'),
+  (27,'foam mounting'),
+  (28,'rockclose insulated dpc 30')
+  
+select * from product
+
+--
+
+insert operations_data
+  select
+    dt,
+    tm,
+    order_number,
+    ot.order_type_id,
+    pc.product_category_id,
+    p.product_id,
+    m.manufacturer_id,
+    cnt,
+    price,
+    selling_price
+  from invoice_order_operations_new a
+    left join order_type ot on a.order_type=ot.order_type
+    left join product_category pc on a.product_category=pc.product_category
+    left join product p on a.product=p.product
+    left join manufacturer m on a.manufacturer=m.manufacturer
+
+--
+
+select count(*) [кол-во новых строк в таблице] from operations_data where dt>='2001-10-22'
