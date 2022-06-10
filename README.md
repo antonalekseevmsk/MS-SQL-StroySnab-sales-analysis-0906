@@ -1,4 +1,4 @@
-# MSSQL-StroySnab-sales-analysis-0906
+# MSSQL-StroySnab-sales-analysis-090622
 MS SQL code sample
 
 Необходимо извлечь из БД данные о продажах стойматериалов компанией «СтройСнаб» в 2000-2001 гг и подготовить их для последующей аналитики.
